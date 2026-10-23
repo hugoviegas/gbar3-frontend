@@ -1,0 +1,27 @@
+name: Build
+
+on:
+  push:
+    branches: [gba2-ui]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [latest, '20240202']
+    container: devkitpro/devkitarm:${{ matrix.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Build
+        run: make -j2
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gbar3-frontend-${{ matrix.image }}
+          path: gbar3-frontend.nds
