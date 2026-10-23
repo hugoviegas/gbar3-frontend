@@ -101,7 +101,7 @@ void settingsLoad(GbaSettings& s) {
 	size_t vs, ve;
 	if (findValue(j, "gbaScreen", vs, ve)) {
 		std::string v = j.substr(vs, ve - vs);
-		s.bottom = (strcasestr(v.c_str(), "bottom") != nullptr);
+		s.bottom = (strcasecmp(v.c_str(), "\"bottom\"") == 0 || strcasecmp(v.c_str(), "bottom") == 0);
 	}
 	if (findValue(j, "gbaScreenBrightness", vs, ve)) {
 		int b = atoi(j.substr(vs, ve - vs).c_str());
