@@ -2,7 +2,6 @@
  Copyright (C) 2005 - 2017
 	Michael "Chishm" Chisholm
 	Dave "WinterMute" Murphy
-	Claudio "sverx"
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU General Public License
@@ -25,15 +24,17 @@
 #include <algorithm>
 #include <unistd.h>
 #include <string.h>
+#include <strings.h>
 #include <stdio.h>
 #include <dirent.h>
 
 #include <nds.h>
 
-#include "iconTitle.h"
+#include "cover.h"
+#include "settings.h"
 
 #define SCREEN_COLS 30
-#define ENTRIES_PER_SCREEN 20
+#define ENTRIES_PER_SCREEN 19
 #define ENTRIES_START_ROW 2
 #define ENTRY_PAGE_LENGTH 10
 
@@ -146,6 +147,9 @@ void showDirectoryContents (const vector<DirEntry>& dirContents, int startRow) {
 			iprintf (" %s", entryName);
 		}
 	}
+
+	// Hint line
+	iprintf ("\x1b[21;0H R ou toque: definicoes");
 }
 
 string browseForFile (const vector<string>& extensionList) {
@@ -162,10 +166,15 @@ string browseForFile (const vector<string>& extensionList) {
 		for (int i = ENTRIES_START_ROW; i < ENTRIES_PER_SCREEN + ENTRIES_START_ROW; i++) {
 			iprintf ("\x1b[%d;0H ", i);
 		}
-		// Show cursor
-		iprintf ("\x1b[%d;0H*", fileOffset - screenOffset + ENTRIES_START_ROW);
 
-		iconTitleUpdate (dirContents.at(fileOffset).isDirectory, dirContents.at(fileOffset).name);
+		if (!dirContents.empty()) {
+			// Show cursor
+			iprintf ("\x1b[%d;0H*", fileOffset - screenOffset + ENTRIES_START_ROW);
+
+			coverUpdate (dirContents.at(fileOffset).isDirectory, dirContents.at(fileOffset).name);
+		} else {
+			coverUpdate (true, string());
+		}
 
 		// Power saving loop. Only poll the keys once per frame and sleep the CPU if there is nothing else to do
 		do {
@@ -177,13 +186,24 @@ string browseForFile (const vector<string>& extensionList) {
 			}
 		} while (!pressed);
 
+		// Settings: R button or touch screen
+		if ((pressed & KEY_R) || (keysDown() & KEY_TOUCH)) {
+			settingsMenu();
+			showDirectoryContents (dirContents, screenOffset);
+			continue;
+		}
+
 		if (pressed & KEY_UP) 		fileOffset -= 1;
 		if (pressed & KEY_DOWN) 	fileOffset += 1;
 		if (pressed & KEY_LEFT) 	fileOffset -= ENTRY_PAGE_LENGTH;
 		if (pressed & KEY_RIGHT)	fileOffset += ENTRY_PAGE_LENGTH;
 
-		if (fileOffset < 0) 	fileOffset = dirContents.size() - 1;		// Wrap around to bottom of list
-		if (fileOffset > ((int)dirContents.size() - 1))		fileOffset = 0;		// Wrap around to top of list
+		if (dirContents.empty()) {
+			fileOffset = 0;
+		} else {
+			if (fileOffset < 0) 	fileOffset = dirContents.size() - 1;		// Wrap around to bottom of list
+			if (fileOffset > ((int)dirContents.size() - 1))		fileOffset = 0;		// Wrap around to top of list
+		}
 
 		// Scroll screen if needed
 		if (fileOffset < screenOffset) 	{
@@ -195,7 +215,7 @@ string browseForFile (const vector<string>& extensionList) {
 			showDirectoryContents (dirContents, screenOffset);
 		}
 
-		if (pressed & KEY_A) {
+		if ((pressed & KEY_A) && !dirContents.empty()) {
 			DirEntry* entry = &dirContents.at(fileOffset);
 			if (entry->isDirectory) {
 				iprintf("Entering directory\n");

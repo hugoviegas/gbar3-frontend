@@ -29,17 +29,17 @@
 #include <unistd.h>
 
 #include "args.h"
+#include "cover.h"
 #include "file_browse.h"
 #include "font.h"
 #include "hbmenu_consolebg.h"
-#include "iconTitle.h"
 #include "nds_loader_arm9.h"
 
 
 using namespace std;
 
 void InitGUI(void) {
-	iconTitleInit();
+	coverInit();
 	videoSetModeSub(MODE_4_2D);
 	vramSetBankC(VRAM_C_SUB_BG);
 	int bgSub = bgInitSub(3, BgType_Bmp8, BgSize_B8_256x256, 1, 0);
