@@ -204,7 +204,8 @@ void settingsMenu(void) {
 
 	if (dirty && !settingsSave(s)) {
 		consoleClear();
-		iconsole_dummy_placeholder
+		iprintf("Erro ao gravar o JSON\n");
+		for (int i = 0; i < 120; i++) swiWaitForVBlank();
 	}
 
 	consoleClear();
